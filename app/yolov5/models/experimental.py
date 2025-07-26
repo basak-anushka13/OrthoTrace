@@ -75,7 +75,7 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
 
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
-        ckpt = torch.load(attempt_download(w), map_location=device or 'cpu')  # load
+        ckpt = torch.load(attempt_download(w), map_location=device or 'cpu', weights_only=False)
         if isinstance(ckpt, dict) and 'model' in ckpt:
             ckpt = (ckpt.get('ema') or ckpt['model']).float().to(device)
         else:
