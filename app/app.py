@@ -1,37 +1,37 @@
-from flask import Flask, render_template, request
 import os
 import sys
-import torch
 import cv2
+import torch
 import numpy as np
 from PIL import Image
-# Paths
-BASE_DIR = Path(__file__).resolve().parent
-YOLOV5_DIR = os.path.join(BASE_DIR, 'app', 'yolov5')  # yolov5 inside app/
-MODEL_PATH = BASE_DIR / 'app' / 'model' / 'best_windows.pt'  # model inside app/model/
+from pathlib import Path
+from flask import Flask, render_template, request, redirect, url_for
 
-# ✅ Add YOLOv5 to Python path
+# Setup paths
+BASE_DIR = Path(__file__).resolve().parent
+YOLOV5_DIR = BASE_DIR / 'yolov5'
+MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'
+UPLOAD_FOLDER = BASE_DIR / 'static' / 'uploads'
+
+# Ensure paths are accessible
 sys.path.append(str(YOLOV5_DIR))
 
-# YOLOv5 imports
+# Flask App
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'results')
+
+# YOLOv5-specific imports
+from models.common import DetectMultiBackend
 from utils.augmentations import letterbox
-from utils.general import non_max_suppression, check_img_size
+from utils.general import non_max_suppression
 from utils.torch_utils import select_device
 from utils.plots import Annotator
-from models.common import DetectMultiBackend
-from models.yolo import DetectionModel
-import torch
-torch.serialization.add_safe_globals({'models.yolo.DetectionModel': DetectionModel})
-# Flask app setup
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Load YOLOv5 model
-device = select_device('')
+# Load model
+device = select_device('0' if torch.cuda.is_available() else 'cpu')
 model = DetectMultiBackend(str(MODEL_PATH), device=device)
-stride, names, pt = model.stride, model.names, model.pt
-imgsz = check_img_size(640, s=stride)
+stride, names = model.stride, model.names
+imgsz = 640
 
 @app.route('/')
 def index():
@@ -39,52 +39,55 @@ def index():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    try:
-        if 'image' not in request.files:
-            return "No image uploaded.", 400
+    if 'image' not in request.files:
+        return redirect(url_for('index'))
 
-        file = request.files['image']
-        if file.filename == '':
-            return "No file selected.", 400
+    file = request.files['image']
+    if file.filename == '':
+        return redirect(url_for('index'))
 
-        # Save uploaded image
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file.save(filepath)
+    # Save file
+    filename = file.filename
+    save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(save_path)
 
-        # Read and preprocess image
-        image = Image.open(filepath).convert('RGB')
-        img0 = np.array(image)
-        img = letterbox(img0, imgsz, stride=stride, auto=True)[0]
-        img = img.transpose(2, 0, 1)[::-1]  # HWC to CHW, BGR to RGB
-        img = np.ascontiguousarray(img)
-        img_tensor = torch.from_numpy(img).to(device).float() / 255.0
-        if img_tensor.ndimension() == 3:
-            img_tensor = img_tensor.unsqueeze(0)
+    # Read and preprocess image
+    img0 = cv2.imread(save_path)
+    if img0 is None:
+        return "Invalid image"
 
-        # Inference
-        pred = model(img_tensor, augment=False, visualize=False)
-        pred = non_max_suppression(pred, conf_thres=0.25, iou_thres=0.45)
+    img = letterbox(img0, imgsz, stride=stride, auto=True)[0]
+    img = img.transpose((2, 0, 1))[::-1]  # BGR to RGB, HWC to CHW
+    img = np.ascontiguousarray(img)
+    img = torch.from_numpy(img).to(device)
+    img = img.float() / 255.0
+    if img.ndimension() == 3:
+        img = img.unsqueeze(0)
 
-        # Annotate results
-        result_img = img0.copy()
-        annotator = Annotator(result_img, line_width=2)
-        for det in pred:
-            if len(det):
-                det[:, :4] = det[:, :4].round()
-                for *xyxy, conf, cls in reversed(det):
-                    label = f"{names[int(cls)]} {conf:.2f}"
-                    annotator.box_label(xyxy, label, color=(0, 255, 0))
+    # Inference
+    pred = model(img, augment=False, visualize=False)
+    pred = non_max_suppression(pred, 0.25, 0.45, None, False, max_det=1000)
 
-        # Save output image
-        result_filename = "result_" + file.filename
-        result_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
-        Image.fromarray(cv2.cvtColor(annotator.result(), cv2.COLOR_BGR2RGB)).save(result_path)
+    label = "No fracture detected"
+    annotator = Annotator(img0.copy(), line_width=2, example=str(names))
 
-        return render_template("result.html", result_image=result_filename)
+    if pred[0] is not None and len(pred[0]):
+        for *xyxy, conf, cls in reversed(pred[0]):
+            label = f'fracture ({conf:.2f})'
+            annotator.box_label(xyxy, label, color=(0, 255, 0))  # Green box
 
-    except Exception as e:
-        print("🔥 Error during prediction:", e)
-        return f"Internal Server Error: {str(e)}", 500
+    # ✅ Get the final annotated image
+    result_image = annotator.result()
+        
+    result_filename = 'output.png'
+    result_img_path = os.path.join('static', 'results', result_filename)
+
+    cv2.imwrite(result_img_path, result_image)
+
+    relative_path = f'results/{result_filename}'
+    result_text = "Fracture Detected" if len(pred[0]) else "No fracture detected"
+    return render_template("result.html", result_text=result_text, image="results/output.png")
+
 
 if __name__ == '__main__':
     app.run(debug=True)

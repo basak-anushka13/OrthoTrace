@@ -3,25 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Result - OrthoTrace</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+  <title>Fracture Detection Result</title>
+  <style>
+    body {
+      background: linear-gradient(to left, #34495e, #2ecc71);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      animation: fadeIn 0.8s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .result-box {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-size: 30px;
+    }
+
+    img {
+      max-width: 90%;
+      border: 4px solid white;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 25px;
+      padding: 10px 20px;
+      background: #1abc9c;
+      border-radius: 6px;
+      color: white;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+
+    a:hover {
+      background: #16a085;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>✅ Detection Result</h1>
-      <p>Fracture(s) highlighted below:</p>
-    </header>
-
-    <section class="result-section">
-      <img src="{{ url_for('static', filename='uploads/' + result_image) }}" alt="Result" class="result-image" />
-      <a href="{{ url_for('index') }}" class="back-btn">⬅️ Try Another Image</a>
-    </section>
-
-    <footer>
-      <p>Made with ❤️ using YOLOv5</p>
-    </footer>
+  <div class="result-box">
+    <h2>🔎 Detection Result</h2>
+    <p>{{ result_text }}</p>
+    <img src="{{ url_for('static', filename=image) }}" alt="Uploaded X-ray" width="400">
+    <br/>
+    <a href="/">⬅ Go Back</a>
   </div>
 </body>
 </html>

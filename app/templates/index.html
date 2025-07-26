@@ -3,27 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>OrthoTrace - Fracture Detection</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>Fracture Detection</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to right, #2c3e50, #3498db);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      animation: fadeIn 1s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 40px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 32px;
+      color: #ffffff;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    form {
+      margin-top: 20px;
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      background-color: white;
+      border-radius: 5px;
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      background: #16a085;
+      color: white;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #1abc9c;
+    }
+
+    .footer {
+      margin-top: 25px;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>🦴 OrthoTrace</h1>
-      <p>Your AI assistant for fracture detection from X-ray images.</p>
-    </header>
-
-    <section class="upload-section">
-      <form action="{{ url_for('predict') }}" method="POST" enctype="multipart/form-data">
-        <input type="file" id="image" name="image" accept="image/*" required style="display: block; margin: 1rem auto;">
-        <button type="submit" class="detect-btn">🔍 Detect Fracture</button>
-      </form>
-    </section>
-
-    <footer>
-      <p>Built with ❤️ by OrthoTrace Team</p>
-    </footer>
+    <h1>🦴 Fracture Detection</h1>
+    <form action="/predict" method="POST" enctype="multipart/form-data">
+      <label for="image">Upload X-ray Image</label><br/>
+      <input type="file" name="image" accept="image/*" required />
+      <br/>
+      <button type="submit">🔍 Detect Fracture</button>
+    </form>
+    <div class="footer">© 2025 SmartMed AI</div>
   </div>
 </body>
 </html>
