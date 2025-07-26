@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent
 YOLOV5_DIR = BASE_DIR / 'yolov5'
 MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'
 UPLOAD_FOLDER = BASE_DIR / 'static' / 'uploads'
-
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Ensure paths are accessible
 sys.path.append(str(YOLOV5_DIR))
 
