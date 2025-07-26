@@ -1,10 +1,18 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-*.pt
-model/
-*.DS_Store
-static/uploads/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
 
+# Environment
+venv/
+.env
+
+# System
+.DS_Store
+
+# YOLOv5-specific
+runs/
+*.pt
