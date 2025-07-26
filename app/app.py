@@ -24,7 +24,6 @@ from models.common import DetectMultiBackend
 from models.yolo import DetectionModel
 torch.serialization.add_safe_globals({'models.yolo.DetectionModel': DetectionModel})
 
-model = torch.load(model_path, map_location=torch.device('cpu'), weights_only=False)
 # Initialize Flask app
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
