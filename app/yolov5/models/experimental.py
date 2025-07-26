@@ -9,7 +9,8 @@ import torch
 import torch.nn as nn
 
 from yolov5.utils.downloads import attempt_download
-
+from torch.serialization import add_safe_globals
+from models.yolo import DetectionModel 
 
 class Sum(nn.Module):
     # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
@@ -69,25 +70,24 @@ class Ensemble(nn.ModuleList):
         y = torch.cat(y, 1)  # nms ensemble
         return y, None  # inference, train output
 
+def attempt_load(weights, map_location=None, inplace=True, fuse=True):
+    from torch.serialization import add_safe_globals
+    from models.yolo import DetectionModel
 
-def attempt_load(weights, device=None, inplace=True, fuse=True):
-    from models.yolo import Detect, Model
-
-    model = Ensemble()
-    for w in weights if isinstance(weights, list) else [weights]:
-        ckpt = torch.load(attempt_download(w), map_location=device or 'cpu', weights_only=False)
-        if isinstance(ckpt, dict) and 'model' in ckpt:
+    add_safe_globals([DetectionModel])
+    ckpt = torch.load(weights, map_location=map_location, weights_only=False)
+    if isinstance(ckpt, dict) and 'model' in ckpt:
             ckpt = (ckpt.get('ema') or ckpt['model']).float().to(device)
-        else:
+    else:
             ckpt = ckpt.float().to(device)  # Already a model
 
         # Model compatibility updates
-        if not hasattr(ckpt, 'stride'):
+    if not hasattr(ckpt, 'stride'):
             ckpt.stride = torch.tensor([32.])
-        if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
+    if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
             ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
 
-        model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # eval mode
+    model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # eval mode
 
     # Module compatibility updates
     for m in model.modules():
