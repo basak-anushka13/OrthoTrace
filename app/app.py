@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
 import os
 import sys
 import torch
@@ -7,25 +7,29 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 
-# Add yolov5 directory to Python path
-FILE = Path(__file__).resolve()
-YOLOV5_DIR = FILE.parent / 'yolov5'
+# Define base path
+BASE_DIR = Path(__file__).resolve().parent
+YOLOV5_DIR = BASE_DIR / 'yolov5'
+MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'
+
+# Add yolov5 to path
 sys.path.append(str(YOLOV5_DIR))
 
+# Import YOLOv5 dependencies
 from utils.augmentations import letterbox
 from utils.general import non_max_suppression, check_img_size
 from utils.torch_utils import select_device
 from utils.plots import Annotator
 from models.common import DetectMultiBackend
-model = DetectMultiBackend('C:/Users/OTHERS/Desktop/OrthoTrace/app/model/best_windows.pt', device='cpu')
+
+# Initialize Flask app
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Load YOLOv5 model
 device = select_device('')
-weights = str(Path(__file__).parent / "model" / "best_windows.pt")
-model = DetectMultiBackend(weights, device=device)
+model = DetectMultiBackend(str(MODEL_PATH), device=device)
 stride, names, pt = model.stride, model.names, model.pt
 imgsz = check_img_size(640, s=stride)
 
@@ -37,20 +41,17 @@ def index():
 def predict():
     try:
         if 'image' not in request.files:
-            print("❌ No file part in the request")
-            return "No file part in the request", 400
+            return "No image uploaded.", 400
 
         file = request.files['image']
         if file.filename == '':
-            print("❌ No file selected")
-            return "No selected file", 400
+            return "No file selected.", 400
 
         # Save uploaded file
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filepath)
-        print(f"📂 File saved to: {filepath}")
 
-        # Load and preprocess
+        # Load and preprocess image
         image = Image.open(filepath).convert('RGB')
         img0 = np.array(image)
         img = letterbox(img0, imgsz, stride=stride, auto=True)[0]
@@ -62,30 +63,28 @@ def predict():
 
         # Inference
         pred = model(img_tensor, augment=False, visualize=False)
-        pred = non_max_suppression(pred, conf_thres=0.1, iou_thres=0.4)
+        pred = non_max_suppression(pred, conf_thres=0.25, iou_thres=0.45)
 
-        # Annotate
+        # Annotate detections
         result_img = img0.copy()
         annotator = Annotator(result_img, line_width=2)
-        for i, det in enumerate(pred):
-            print(f"🔍 Detections: {len(det)}")
+        for det in pred:
             if len(det):
                 det[:, :4] = det[:, :4].round()
                 for *xyxy, conf, cls in reversed(det):
-                    label = "Fracture"
+                    label = f"{names[int(cls)]} {conf:.2f}"
                     annotator.box_label(xyxy, label, color=(0, 255, 0))
 
         # Save result
         result_filename = "result_" + file.filename
         result_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
         Image.fromarray(cv2.cvtColor(annotator.result(), cv2.COLOR_BGR2RGB)).save(result_path)
-        print(f"✅ Result saved to: {result_path}")
 
         return render_template("result.html", result_image=result_filename)
 
     except Exception as e:
-        print("🔥 Error during prediction:", e)
-        return "An internal error occurred.", 500
+        print("🔥 Error:", e)
+        return "An internal error occurred during prediction.", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
