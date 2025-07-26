@@ -9,8 +9,8 @@ from pathlib import Path
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
-YOLOV5_DIR = BASE_DIR / 'yolov5'              # Make sure this folder contains the yolov5 repo
-MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'   # Rename your model if needed
+YOLOV5_DIR = BASE_DIR / 'yolov5'  # Your cloned YOLOv5 repo
+MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'  # Your trained model
 
 # Add YOLOv5 to Python path
 sys.path.append(str(YOLOV5_DIR))
@@ -24,7 +24,7 @@ from models.common import DetectMultiBackend
 from models.yolo import DetectionModel
 torch.serialization.add_safe_globals({'models.yolo.DetectionModel': DetectionModel})
 
-# Flask app
+# Flask app setup
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -57,7 +57,7 @@ def predict():
         image = Image.open(filepath).convert('RGB')
         img0 = np.array(image)
         img = letterbox(img0, imgsz, stride=stride, auto=True)[0]
-        img = img.transpose(2, 0, 1)[::-1]
+        img = img.transpose(2, 0, 1)[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
         img_tensor = torch.from_numpy(img).to(device).float() / 255.0
         if img_tensor.ndimension() == 3:
