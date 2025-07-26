@@ -17,7 +17,7 @@ from utils.general import non_max_suppression, check_img_size
 from utils.torch_utils import select_device
 from utils.plots import Annotator
 from models.common import DetectMultiBackend
-
+model = DetectMultiBackend('C:/Users/OTHERS/Desktop/OrthoTrace/app/model/best_windows.pt', device='cpu')
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
