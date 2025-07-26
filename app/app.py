@@ -10,7 +10,7 @@ from pathlib import Path
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
 YOLOV5_DIR = BASE_DIR / 'yolov5'              # Make sure this folder contains the yolov5 repo
-MODEL_PATH = BASE_DIR / 'model' / 'best.pt'   # Rename your model if needed
+MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'   # Rename your model if needed
 
 # Add YOLOv5 to Python path
 sys.path.append(str(YOLOV5_DIR))
