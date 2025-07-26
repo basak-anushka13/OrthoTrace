@@ -1,14 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Fracture Detection</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OrthoTrace - Fracture Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Upload X-ray to Detect Fracture</h2>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="xray" required>
-        <input type="submit" value="Detect">
-    </form>
+  <div class="container">
+    <header>
+      <h1>🦴 OrthoTrace</h1>
+      <p>Your AI assistant for fracture detection from X-ray images.</p>
+    </header>
+
+    <section class="upload-section">
+      <form action="{{ url_for('predict') }}" method="POST" enctype="multipart/form-data">
+        <input type="file" id="image" name="image" accept="image/*" required style="display: block; margin: 1rem auto;">
+        <button type="submit" class="detect-btn">🔍 Detect Fracture</button>
+      </form>
+    </section>
+
+    <footer>
+      <p>Built with ❤️ by OrthoTrace Team</p>
+    </footer>
+  </div>
 </body>
 </html>
-

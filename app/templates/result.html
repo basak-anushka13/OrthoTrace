@@ -1,11 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Fracture Result</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Result - OrthoTrace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h2>Detection Result</h2>
-    <img src="{{ result_img }}" width="600">
-    <br><a href="/">Try another image</a>
+  <div class="container">
+    <header>
+      <h1>✅ Detection Result</h1>
+      <p>Fracture(s) highlighted below:</p>
+    </header>
+
+    <section class="result-section">
+      <img src="{{ url_for('static', filename='uploads/' + result_image) }}" alt="Result" class="result-image" />
+      <a href="{{ url_for('index') }}" class="back-btn">⬅️ Try Another Image</a>
+    </section>
+
+    <footer>
+      <p>Made with ❤️ using YOLOv5</p>
+    </footer>
+  </div>
 </body>
 </html>
