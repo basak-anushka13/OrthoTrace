@@ -7,15 +7,15 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 
-# Define base path
+# Paths
 BASE_DIR = Path(__file__).resolve().parent
-YOLOV5_DIR = BASE_DIR / 'yolov5'
-MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'
+YOLOV5_DIR = BASE_DIR / 'yolov5'              # Make sure this folder contains the yolov5 repo
+MODEL_PATH = BASE_DIR / 'model' / 'best.pt'   # Rename your model if needed
 
-# Add yolov5 to path
+# Add YOLOv5 to Python path
 sys.path.append(str(YOLOV5_DIR))
 
-# Import YOLOv5 dependencies
+# YOLOv5 imports
 from utils.augmentations import letterbox
 from utils.general import non_max_suppression, check_img_size
 from utils.torch_utils import select_device
@@ -24,7 +24,7 @@ from models.common import DetectMultiBackend
 from models.yolo import DetectionModel
 torch.serialization.add_safe_globals({'models.yolo.DetectionModel': DetectionModel})
 
-# Initialize Flask app
+# Flask app
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -49,11 +49,11 @@ def predict():
         if file.filename == '':
             return "No file selected.", 400
 
-        # Save uploaded file
+        # Save uploaded image
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filepath)
 
-        # Load and preprocess image
+        # Read and preprocess image
         image = Image.open(filepath).convert('RGB')
         img0 = np.array(image)
         img = letterbox(img0, imgsz, stride=stride, auto=True)[0]
@@ -67,7 +67,7 @@ def predict():
         pred = model(img_tensor, augment=False, visualize=False)
         pred = non_max_suppression(pred, conf_thres=0.25, iou_thres=0.45)
 
-        # Annotate detections
+        # Annotate results
         result_img = img0.copy()
         annotator = Annotator(result_img, line_width=2)
         for det in pred:
@@ -77,7 +77,7 @@ def predict():
                     label = f"{names[int(cls)]} {conf:.2f}"
                     annotator.box_label(xyxy, label, color=(0, 255, 0))
 
-        # Save result
+        # Save output image
         result_filename = "result_" + file.filename
         result_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
         Image.fromarray(cv2.cvtColor(annotator.result(), cv2.COLOR_BGR2RGB)).save(result_path)
@@ -85,8 +85,8 @@ def predict():
         return render_template("result.html", result_image=result_filename)
 
     except Exception as e:
-        print("🔥 Error:", e)
-        return "An internal error occurred during prediction.", 500
+        print("🔥 Error during prediction:", e)
+        return f"Internal Server Error: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
