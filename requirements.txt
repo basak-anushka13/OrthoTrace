@@ -11,3 +11,5 @@ pyyaml
 seaborn
 ipython
 requests
+flask
+gunicorn
