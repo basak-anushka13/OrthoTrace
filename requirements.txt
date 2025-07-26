@@ -1,6 +1,6 @@
 streamlit
 torch==2.6.0
-opencv-python
+opencv-python-headless
 numpy
 pillow
 matplotlib
