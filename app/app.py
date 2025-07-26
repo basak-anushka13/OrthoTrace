@@ -6,9 +6,8 @@ import numpy as np
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for
 
-# ✅ Include YOLOv5 path
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1] / 'yolov5'  # adjust if needed
+ROOT = FILE.parent / 'yolov5'  # correct: same level as app.py
 sys.path.append(str(ROOT))
 
 # ✅ Import YOLOv5 modules
