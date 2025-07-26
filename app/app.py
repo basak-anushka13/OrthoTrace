@@ -9,16 +9,16 @@ from pathlib import Path
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
 YOLOV5_DIR = os.path.join(BASE_DIR, 'app', 'yolov5')  # yolov5 inside app/
-MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'  # model inside app/model/
+MODEL_PATH = BASE_DIR / 'app' / 'model' / 'best_windows.pt'  # model inside app/model/
 
 # Add YOLOv5 to Python path
 sys.path.append(str(YOLOV5_DIR))
 
 # YOLOv5 imports
-from utils.augmentations import letterbox
-from utils.general import non_max_suppression, check_img_size
-from utils.torch_utils import select_device
-from utils.plots import Annotator
+from yolov5.utils.augmentations import letterbox
+from yolov5.utils.general import non_max_suppression, check_img_size
+from yolov5utils.torch_utils import select_device
+from yolov5utils.plots import Annotator
 from models.common import DetectMultiBackend
 from models.yolo import DetectionModel
 torch.serialization.add_safe_globals({'models.yolo.DetectionModel': DetectionModel})
