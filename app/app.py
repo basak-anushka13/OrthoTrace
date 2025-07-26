@@ -6,14 +6,13 @@ import cv2
 import numpy as np
 from PIL import Image
 from pathlib import Path
-
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
 YOLOV5_DIR = BASE_DIR / 'app' / 'yolov5'  # yolov5 inside app/
 MODEL_PATH = BASE_DIR / 'app' / 'model' / 'best_windows.pt'  # model inside app/model/
 
 # Add YOLOv5 to Python path
-sys.path.append(str(YOLOV5_DIR))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'yolov5'))
 
 # YOLOv5 imports
 from utils.augmentations import letterbox
