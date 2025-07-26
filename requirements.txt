@@ -13,3 +13,4 @@ ipython
 requests
 flask
 gunicorn
+scipy
