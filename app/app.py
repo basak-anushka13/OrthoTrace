@@ -9,7 +9,7 @@ from pathlib import Path
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
 YOLOV5_DIR = os.path.join(BASE_DIR, 'app', 'yolov5')  # yolov5 inside app/
-MODEL_PATH = BASE_DIR / 'app' / 'model' / 'best_windows.pt'  # model inside app/model/
+MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'  # model inside app/model/
 
 # Add YOLOv5 to Python path
 sys.path.append(str(YOLOV5_DIR))
