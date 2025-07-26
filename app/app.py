@@ -9,8 +9,8 @@ from pathlib import Path
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
-YOLOV5_DIR = BASE_DIR / 'yolov5'  # Your cloned YOLOv5 repo
-MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'  # Your trained model
+YOLOV5_DIR = BASE_DIR / 'app' / 'yolov5' # Your cloned YOLOv5 repo
+MODEL_PATH = BASE_DIR / 'app' /  'model' / 'best_windows.pt'  # Your trained model
 
 # Add YOLOv5 to Python path
 sys.path.append(str(YOLOV5_DIR))
