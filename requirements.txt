@@ -1,6 +1,13 @@
-Flask
-torch
-numpy
+streamlit
+torch==2.6.0
 opencv-python
-PyYAML
+numpy
+pillow
 matplotlib
+ultralytics
+tqdm
+psutil
+pyyaml
+seaborn
+ipython
+requests
