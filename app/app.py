@@ -1,5 +1,5 @@
-import os
 import sys
+import os
 import cv2
 import torch
 import numpy as np
@@ -7,20 +7,20 @@ from PIL import Image
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for
 
-# Setup paths
-BASE_DIR = Path(__file__).resolve().parent
-YOLOV5_DIR = BASE_DIR / 'yolov5'
+# --- Base directories ---
+BASE_DIR = Path(__file__).resolve().parent  # app/
+YOLOV5_DIR = BASE_DIR.parent / 'yolov5'     # ../yolov5
 MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'
-UPLOAD_FOLDER = BASE_DIR / 'static' / 'uploads'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# Ensure paths are accessible
+UPLOAD_FOLDER = BASE_DIR / 'static' / 'results'
+
+# --- Add yolov5 to Python path ---
 sys.path.append(str(YOLOV5_DIR))
 
-# Flask App
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'results')
+# --- Flask App ---
+app = Flask(__name__, static_folder='static')
+app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
 
-# YOLOv5-specific imports
+# --- YOLOv5 Imports (after sys.path) ---
 from models.common import DetectMultiBackend
 from utils.augmentations import letterbox
 from utils.general import non_max_suppression
@@ -29,7 +29,8 @@ from utils.plots import Annotator
 
 # Load model
 device = select_device('0' if torch.cuda.is_available() else 'cpu')
-model = DetectMultiBackend(str(MODEL_PATH), device=device)
+model = DetectMultiBackend(r"C:\Users\OTHERS\Desktop\OrthoTrace\app\model\best_windows.pt", device=device)
+print("Model loaded:", MODEL_PATH)
 stride, names = model.stride, model.names
 imgsz = 640
 
@@ -46,15 +47,49 @@ def predict():
     if file.filename == '':
         return redirect(url_for('index'))
 
-    # Save file
-    filename = file.filename
-    save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(save_path)
+    if file:
+        # Save uploaded image
+        filename = file.filename
+        img_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(img_path)
 
-    # Read and preprocess image
-    img0 = cv2.imread(save_path)
-    if img0 is None:
-        return "Invalid image"
+        # --- Load image and preprocess ---
+        device = select_device('')
+        model = DetectMultiBackend(str(MODEL_PATH), device=device)
+        stride, pt = model.stride, model.pt
+        names = model.names
+
+        img0 = cv2.imread(img_path)  # BGR
+        img = letterbox(img0, 640, stride=stride, auto=True)[0]
+        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+        img = np.ascontiguousarray(img)
+        img = torch.from_numpy(img).to(device).float() / 255.0
+        if img.ndimension() == 3:
+            img = img.unsqueeze(0)
+
+        # --- Run detection ---
+        pred = model(img, augment=False, visualize=False)
+        pred = non_max_suppression(pred, conf_thres=0.1, iou_thres=0.45, classes=None, agnostic=False)
+
+        # --- Annotate image ---
+        annotator = Annotator(img0.copy(), line_width=3)
+        found = False
+        for det in pred:
+            if len(det):
+                found = True
+                for *xyxy, conf, cls in reversed(det):
+                    label = f'Fracture {conf:.2f}'
+                    annotator.box_label(xyxy, label, color=(0, 255, 0))
+
+        result_img = annotator.result()
+        result_filename = 'output_' + filename
+        result_img_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
+        cv2.imwrite(result_img_path, result_img)
+
+        # --- Prepare result ---
+        result_text = "Fracture detected!" if found else "No fracture detected."
+        return render_template("result.html", result_text=result_text, image=f"results/{result_filename}")
+
 
     img = letterbox(img0, imgsz, stride=stride, auto=True)[0]
     img = img.transpose((2, 0, 1))[::-1]  # BGR to RGB, HWC to CHW

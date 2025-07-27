@@ -11,7 +11,6 @@ from utils.plots import Annotator, colors
 try:
     import clearml
     from clearml import Dataset, Task
-
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
@@ -85,8 +84,8 @@ class ClearmlLogger:
         self.data_dict = None
         if self.clearml:
             self.task = Task.init(
-                project_name=opt.project if opt.project != 'runs/train' else 'YOLOv5',
-                task_name=opt.name if opt.name != 'exp' else 'Training',
+                project_name='YOLOv5',
+                task_name='training',
                 tags=['YOLOv5'],
                 output_uri=True,
                 auto_connect_frameworks={'pytorch': False}
@@ -142,10 +141,10 @@ class ClearmlLogger:
                     color = colors(i)
 
                     class_name = class_names[int(class_nr)]
-                    confidence_percentage = round(float(conf) * 100, 2)
-                    label = f"{class_name}: {confidence_percentage}%"
+                    confidence = round(float(conf) * 100, 2)
+                    label = f"{class_name}: {confidence}%"
 
-                    if conf > conf_threshold:
+                    if confidence > conf_threshold:
                         annotator.rectangle(box.cpu().numpy(), outline=color)
                         annotator.box_label(box.cpu().numpy(), label=label, color=color)
 

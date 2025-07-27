@@ -8,9 +8,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from yolov5.utils.downloads import attempt_download
-from torch.serialization import add_safe_globals
-from models.yolo import DetectionModel 
+from models.common import Conv
+from utils.downloads import attempt_download
+
 
 class Sum(nn.Module):
     # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
@@ -70,44 +70,44 @@ class Ensemble(nn.ModuleList):
         y = torch.cat(y, 1)  # nms ensemble
         return y, None  # inference, train output
 
-def attempt_load(weights, map_location=None, inplace=True, fuse=True):
-    from torch.serialization import add_safe_globals
-    from models.yolo import DetectionModel
 
-    add_safe_globals([DetectionModel])
-    ckpt = torch.load(weights, map_location=map_location, weights_only=False)
-    if isinstance(ckpt, dict) and 'model' in ckpt:
-            ckpt = (ckpt.get('ema') or ckpt['model']).float().to(device)
+def attempt_load(weights, device=None, inplace=True, fuse=True):
+    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
+    from models.yolo import Detect, Model
+
+    model = Ensemble()
+    for w in weights if isinstance(weights, list) else [weights]:
+        ckpt = torch.load(w, map_location=device)
+        # REPLACE WITH:
+    if isinstance(ckpt, dict):
+        ckpt = (ckpt.get('ema') or ckpt['model']).to(device).float()
     else:
-            ckpt = ckpt.float().to(device)  # Already a model
-
-        # Model compatibility updates
+        ckpt = ckpt.to(device).float()
     if not hasattr(ckpt, 'stride'):
-            ckpt.stride = torch.tensor([32.])
-    if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
-            ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
+        ckpt.stride = torch.tensor([32.])  # compatibility update for ResNet etc.
 
-    model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # eval mode
+    model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # model in eval mode
 
-    # Module compatibility updates
+
+    # Compatibility updates
     for m in model.modules():
         t = type(m)
         if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model):
-            m.inplace = inplace
+            m.inplace = inplace  # torch 1.7.0 compatibility
             if t is Detect and not isinstance(m.anchor_grid, list):
                 delattr(m, 'anchor_grid')
                 setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
         elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
-            m.recompute_scale_factor = None
+            m.recompute_scale_factor = None  # torch 1.11.0 compatibility
 
     # Return model
     if len(model) == 1:
-        return model[0]
+        return model[-1]
 
+    # Return detection ensemble
     print(f'Ensemble created with {weights}\n')
     for k in 'names', 'nc', 'yaml':
         setattr(model, k, getattr(model[0], k))
-    model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride
+    model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
     assert all(model[0].nc == m.nc for m in model), f'Models have different class counts: {[m.nc for m in model]}'
     return model
-
