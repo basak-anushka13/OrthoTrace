@@ -1,14 +1,5 @@
 flask
-gunicorn
-torch==2.5.0
+torch
 opencv-python-headless
 numpy
-pillow
-ultralytics
-tqdm
-psutil
-pyyaml
-seaborn
-ipython
-requests
-scipy
+Pillow
