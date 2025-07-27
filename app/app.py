@@ -14,7 +14,7 @@ MODEL_PATH = BASE_DIR / 'model' / 'best_windows.pt'
 UPLOAD_FOLDER = BASE_DIR / 'static' / 'results'
 
 # --- Add yolov5 to Python path ---
-sys.path.append(str(YOLOV5_DIR))
+sys.path.append('./yolov5')
 
 # --- Flask App ---
 app = Flask(__name__, static_folder='static')
